@@ -107,18 +107,22 @@ class MetaFrameWork(object):
         
         # source
         dataloader = functools.partial(DataLoader, num_workers=workers, pin_memory=True, batch_size=batch_size, shuffle=True)
-        self.train_loader = dataloader(self.dataset(mode='train', domains=self.source, force_cache=False, crop_size=600, imgs_per_epoch=3000))
-
+        self.train_loader = dataloader(self.dataset(mode='val', domains=self.source, force_cache=False, crop_size=600, imgs_per_epoch=300))
+        print("train size",len(self.train_loader))
         # dataloader = functools.partial(DataLoader, num_workers=workers, pin_memory=True, batch_size=self.test_size, shuffle=False)
         # self.source_val_loader = dataloader(self.dataset(mode='val', domains=self.source, force_cache=True))
         
         # traget
+        print(self.target)
         target_dataset, folder = get_dataset(self.target)
-        self.target_loader_train = dataloader(target_dataset(root=ROOT + folder, mode='test'), batch_size=batch_size, crop_size=600)
+        # self.target_loader_train = dataloader(target_dataset(root=ROOT + folder, mode='val'), batch_size=batch_size)#, crop_size=600)#changed to test -->val
         #self.target_loader_train = dataloader(target_dataset(root=ROOT + folder, mode='test'), batch_size=len(self.source)*batch_size)
-
-        dataloader = functools.partial(DataLoader, num_workers=workers, pin_memory=True, batch_size=self.test_size, shuffle=False)
-        self.target_loader_val = dataloader(target_dataset(root=ROOT + folder, mode='val'))       
+        self.target_loader_train =dataloader(self.dataset(mode='val', domains=self.source, force_cache=False, crop_size=600, imgs_per_epoch=30))
+        print("target_loader_train size",len(self.target_loader_train))
+        #dataloader = functools.partial(DataLoader, num_workers=workers, pin_memory=True, batch_size=self.test_size, shuffle=False)
+        # self.target_loader_val = dataloader(target_dataset(root=ROOT + folder, mode='val'))       
+        self.target_loader_val = dataloader(self.dataset(mode='val', domains=self.source, force_cache=False, crop_size=600, imgs_per_epoch=30))
+        print("target_loader_val size",len(self.target_loader_val))
         # self.target_test_loader = dataloader(target_dataset(root=ROOT + folder, mode='test'))
         if self.opt == 'S':
             self.opt_old = SGD(self.backbone.parameters(), lr=self.outer_update_lr, momentum=0.9, weight_decay=5e-4)
@@ -195,15 +199,21 @@ class MetaFrameWork(object):
         # use source images for meta-train, mixed images for meta-test
         imgs, targets = inputs
         N, C, H, W = imgs.size()
+        print("images",imgs.size())
         # mixed only for meta test
         if self.mix == 1:
             train_idx = split_idx[:N // 2]
             test_idx = split_idx[N // 2:]
         else:
             split_idx = np.random.permutation(N)
-            i = np.random.randint(1, N)
+            print('N',N)
+            print('split', split_idx)
+            i = np.random.randint(1, N+1)
+            print('rand i ',i)
+            # train_idx = split_idx[:i]
+            # test_idx = split_idx[i:]
             train_idx = split_idx[:i]
-            test_idx = split_idx[i:]
+            test_idx = train_idx
         
         meta_train_imgs = imgs[train_idx]
         meta_train_targets = targets[train_idx]
@@ -211,6 +221,17 @@ class MetaFrameWork(object):
         meta_test_targets = targets[test_idx]
         
         # Meta-Train
+        id=60
+        # print("initial param of org network")
+        # for n,p in self.backbone.named_parameters():
+        #     print(p.shape)
+        #     print(n,p[id])
+        #     if p.grad != None:
+        #        print("grad",p.grad[id])
+        #     else:
+        #         print('grad',p.grad)
+        #     break
+
         tr_logits = self.backbone(meta_train_imgs)
         tr_logits = make_same_size(tr_logits, meta_train_targets)
         ds_loss = self.ce(tr_logits, meta_train_targets[:, 0])
@@ -221,11 +242,35 @@ class MetaFrameWork(object):
         self.opt_old.zero_grad(set_to_none=True)
   
         ds_loss.backward(retain_graph=True)
+        # print('param of org network after ds backward')
+        # for n,p in self.backbone.named_parameters():
+        #     print(n,p[id])
+        #     if p.grad != None:
+        #        print("grad",p.grad[id])
+        #     else:
+        #         print('grad',p.grad)
+        #     break
         
         updated_net = get_updated_network(self.backbone, self.updated_net, self.inner_update_lr).train().cuda()
+        # print('param updated_net')
+        # for n,p in updated_net.named_parameters():
+        #     print(n,p[id])
+        #     if p.grad != None:
+        #        print("grad",p.grad[id])
+        #     else:
+        #         print('grad',p.grad)
+        #     break
+        # print('param of org network after copy')
+        # for n,p in self.backbone.named_parameters():
+        #     print(n,p[id])
+        #     if p.grad != None:
+        #        print("grad",p.grad[id])
+        #     else:
+        #         print('grad',p.grad)
+        #     break
 
         # Meta-Test
-        te_logits = updated_net(meta_test_imgs)
+        te_logits = updated_net(meta_test_imgs*0.24)
         # te_logits = test_res[0]
         te_logits = make_same_size(te_logits, meta_test_imgs)    
             
@@ -237,9 +282,35 @@ class MetaFrameWork(object):
 
         # Update old network
         dg_loss.backward()
-        self.opt_old.step()
+
+        # print('param of org network after dg backward')
+        # for n,p in self.backbone.named_parameters():
+        #     print(n,p[id])
+        #     if p.grad != None:
+        #        print("grad",p.grad[id])
+        #     else:
+        #         print('grad',p.grad)
+        #     break
+
+        # print('param updated_net')
+        # for n,p in updated_net.named_parameters():
+        #     print(n,p[id])
+        #     print("grad",p[id].grad)
+        #     break
+        # self.opt_old.step()
+
+        # print('param after optimizer backward')
+        # for n,p in self.backbone.named_parameters():
+        #     print(n,p[id])
+        #     if p.grad != None:
+        #        print("grad",p.grad[id])
+        #     else:
+        #         print('grad',p.grad)
+        #     break
         
         self.scheduler_old.step(epoch, it)
+
+        
         losses = {
             'dg': dg_loss.item(),
             'ds': ds_loss.item()
@@ -269,9 +340,13 @@ class MetaFrameWork(object):
                 for it, (s, t) in enumerate(zip(self.train_loader, self.target_loader_train)):
                     
                     meta = (it + 1) % self.train_num == 0
-                    mix = True
+   
+                    mix = False #True
                     s_paths, s_imgs, s_targets = s
-                    t_paths, t_imgs = t
+                    # print(len(t[0]))
+                    # print(len(t))
+                    # print(type(t))
+                    t_paths, t_imgs,_= t
                     # source
                     s_imgs, s_targets =  to_cuda([s_imgs, s_targets])
                     B, D, C, H, W = s_imgs.size()
@@ -284,37 +359,49 @@ class MetaFrameWork(object):
                         # target train images, labels  
                          
                         t_imgs =  to_cuda(t_imgs)
-                        
-                        B, C, H, W = t_imgs.size()
+                        # print(t_imgs.size())
+                        _,B, C, H, W = t_imgs.size()
                         
                         # pseudo_label: target for training
                         with torch.no_grad():
-                            logits_u_w = self.backbone(t_imgs)
+                            # print(self.backbone)
+                            # print(t_imgs.shape)
+                            # print(B, C, H, W )
+                            logits_u_w = self.backbone(t_imgs.view(B, C, H, W ))
                         logits_u_w = make_same_size(logits_u_w, s_targets)  
                         #targets_u_w = get_prediction(logits_u_w).unsqueeze(1)
                         pseudo_label = torch.softmax(logits_u_w.detach(), dim=1)
                         max_probs, targets_u_w = torch.max(pseudo_label, dim=1)
                         targets_u_w = targets_u_w.unsqueeze(1)
     
-                        # mixing
-                        for i in range(len(self.source)*self.train_size):
-                            classes = torch.unique(s_targets[i])
-                            #classes=classes[classes!=ignore_label]
-                            nclasses = classes.shape[0]
-                            classes = (classes[torch.Tensor(np.random.choice(nclasses, int((nclasses+nclasses%2)/2),replace=False)).long()]).cuda()              
-                            MixMask = self.generate_class_mask(s_targets[i], classes).unsqueeze(0).cuda()
-                            mix_img, mix_target = self.strongTransform(MixMask, data=torch.cat((s_imgs[i].unsqueeze(0),t_imgs[i//len(self.source)].unsqueeze(0))), target=torch.cat((s_targets[i].unsqueeze(0),targets_u_w[i//len(self.source)].unsqueeze(0))))
-                            if i == 0:
-                                mix_imgs = mix_img
-                                mix_targets = mix_target
-                            else:
-                                mix_imgs = torch.cat((mix_imgs, mix_img))
-                                mix_targets = torch.cat((mix_targets, mix_target))
-                        s_imgs = torch.cat((s_imgs, mix_imgs))
-                        s_targets = torch.cat((s_targets, mix_targets))
+                        # # mixing
+                        # for i in range(len(self.source)*self.train_size):
+                        #     classes = torch.unique(s_targets[i])
+                        #     #classes=classes[classes!=ignore_label]
+                        #     nclasses = classes.shape[0]
+                        #     classes = (classes[torch.Tensor(np.random.choice(nclasses, int((nclasses+nclasses%2)/2),replace=False)).long()]).cuda()              
+                        #     MixMask = self.generate_class_mask(s_targets[i], classes).unsqueeze(0).cuda()
+                        #     print("s_imgs[i].unsqueeze(0)",s_imgs[i].unsqueeze(0).shape)
+                        #     print("t_imgs[i//len(self.source)].unsqueeze(0)",t_imgs[i//len(self.source)].unsqueeze(0).shape)
+                        #     print(torch.cat((s_targets[i].unsqueeze(0),
+                        #                               targets_u_w[i//len(self.source)].unsqueeze(0))).shape)
+
+                        #     mix_img, mix_target = self.strongTransform(MixMask, data=torch.cat((s_imgs[i].unsqueeze(0),
+                        #             t_imgs[i//len(self.source)].unsqueeze(0))), 
+                        #             target=torch.cat((s_targets[i].unsqueeze(0),
+                        #                               targets_u_w[i//len(self.source)].unsqueeze(0))))
+                        #     if i == 0:
+                        #         mix_imgs = mix_img
+                        #         mix_targets = mix_target
+                        #     else:
+                        #         mix_imgs = torch.cat((mix_imgs, mix_img))
+                        #         mix_targets = torch.cat((mix_targets, mix_target))
+                        # s_imgs = torch.cat((s_imgs, mix_imgs))
+                        # s_targets = torch.cat((s_targets, mix_targets))
                         
                     if meta:
                         losses, acc, lr = self.meta_train(epoch - 1, it, to_cuda([s_imgs, s_targets]))
+                        print("meta")
                     else:
                         losses, acc, lr = self.train(epoch - 1, it, to_cuda([s_imgs, s_targets]))
                     if losses != False:

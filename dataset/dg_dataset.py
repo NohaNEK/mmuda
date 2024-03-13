@@ -58,6 +58,7 @@ class DGMetaDataSets(object):
         super(DGMetaDataSets, self).__init__()
 
         root = ROOT
+        print('root',root)
         self.mode = mode
         self.domain_split_num = split_num
         self.imgs_per_epoch = imgs_per_epoch
@@ -107,8 +108,17 @@ class DGMetaDataSets(object):
         paths, imgs, labels = [], [], []
         for i, (domain) in enumerate(self.domains):
             p, img, label = self.get_random_img_from(domain, idx)
-            paths.append(p), imgs.append(img), labels.append(label)
-        paths, imgs, labels = paths, torch.stack(imgs, 0), torch.stack(labels, 0)
+            # print('images',img)
+            # print('label',label)
+            if label != None :
+                paths.append(p), imgs.append(img), labels.append(label)
+            else:
+                print('find none val')
+        if imgs and labels:
+            paths, imgs, labels = paths, torch.stack(imgs, 0), torch.stack(labels, 0)
+        # print('path',paths)
+        # print('images',len(imgs))
+        # print('label',len(labels))
         imgs, labels = self.post_processors(imgs, labels, self.mode)
         return paths, imgs, labels
 

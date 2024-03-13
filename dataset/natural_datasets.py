@@ -450,7 +450,8 @@ class DADASeg(CityScapesDataSet):
     def split_data(self, root):
         root = Path(root) / 'leftImg8bit'
         # leftImg8bit/val/10_002/0220.jpg, gtFine/val/10_002/0220_labelTrainIds.png
-        img_to_mask = [['leftImg8bit', '.jpg'], ['gtFine', '_labelTrainIds.png']]
+        img_to_mask = [['leftImg8bit', '.png'], ['gtFine', '_labelTrainIds.png']]
+        # print('path test',self.output_path / 'dataset' / 'DADA_SEG')
         splitter = TwoLevelSplitter(root, img_to_mask, cache_path=self.output_path / 'dataset' / 'DADA_SEG',
                                     img_filter='jpg', force_cache=self.force_cache, is_DADA_SEG=True)
         train, dev, test = splitter.get_train_dev_test_path()

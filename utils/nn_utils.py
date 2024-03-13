@@ -199,10 +199,13 @@ def get_updated_network(old, new, lr, load=False):
     updated_theta = {}
     state_dicts = old.state_dict()
     param_dicts = dict(old.named_parameters())
+    
 
     for i, (k, v) in enumerate(state_dicts.items()):
         if k in param_dicts.keys() and param_dicts[k].grad is not None:
+
             updated_theta[k] = param_dicts[k] - lr * param_dicts[k].grad
+           
         else:
             updated_theta[k] = state_dicts[k]
     if load:

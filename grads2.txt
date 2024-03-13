@@ -1,0 +1,75 @@
+initial param of org network
+torch.Size([64, 3, 7, 7])
+module.encoder.patch_embed1.proj.weight tensor([[[ 5.0913e-04,  1.8030e-03,  9.1641e-03,  1.0728e-02,  5.9126e-03,
+           2.4140e-03,  2.2162e-03],
+grad none
+
+
+
+param of org network after ds backward
+module.encoder.patch_embed1.proj.weight tensor([[[ 5.0913e-04,  1.8030e-03,  9.1641e-03,  1.0728e-02,  5.9126e-03,
+           2.4140e-03,  2.2162e-03],
+
+
+
+
+param updated_net
+module.encoder.patch_embed1.proj.weight tensor([[[ 5.0198e-04,  1.7972e-03,  9.1638e-03,  1.0728e-02,  5.9166e-03,
+           2.4151e-03,  2.2101e-03],
+
+param of org network after copy
+module.encoder.patch_embed1.proj.weight tensor([[[ 5.0913e-04,  1.8030e-03,  9.1641e-03,  1.0728e-02,  5.9126e-03,
+           2.4140e-03,  2.2162e-03],
+
+
+
+param after dg backward
+
+param updated_net
+module.encoder.patch_embed1.proj.weight tensor([[[ 5.0198e-04,  1.7972e-03,  9.1638e-03,  1.0728e-02,  5.9166e-03,
+           2.4151e-03,  2.2101e-03],
+
+
+param after optimizer backward
+module.encoder.patch_embed1.proj.weight tensor([[[ 0.0055,  0.0068,  0.0142,  0.0157,  0.0109,  0.0074,  0.0072],
+         [ 0.0055,  0.0103,  0.0028,  0.0101,  0.0075,  0.0140,  0.0063],
+
+
+
+
+
+
+
+
+
+
+
+
+initial org net 
+grad None
+
+
+param of org network after ds backward
+grad tensor([[[ 0.0071,  0.0058,  0.0003,  0.0006, -0.0039, -0.0011,  0.0061],
+
+
+param updated_net
+grad None
+
+
+param of org network after dg backward
+grad tensor([[[-2.9511e-02, -2.7227e-02, -2.6816e-02, -4.8691e-03, -1.0852e-02,
+          -1.9214e-02, -5.6933e-03],
+
+param updated_net
+grad None
+
+
+param after optimizer backward
+
+grad tensor([[[-2.9511e-02, -2.7227e-02, -2.6816e-02, -4.8691e-03, -1.0852e-02,
+          -1.9214e-02, -5.6933e-03],
+
+
+
+

@@ -9,8 +9,11 @@ from urllib.request import urlretrieve, urlopen
 import torch
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
-from torchvision.models.resnet import model_urls
-
+#from torchvision.models.resnet import model_urls
+try: # for torchvision<0.4
+    from torchvision.models.utils import load_state_dict_from_url as model_urls
+except: # for torchvision>=0.4
+    from torch.hub import load_state_dict_from_url as model_urls
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152',
            'resnet18_mit', 'resnet50_mit', 'resnet101_mit',
            'resnet50_enc', 'resnet101_enc', 'resnet152_enc']

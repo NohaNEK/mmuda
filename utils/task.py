@@ -1,12 +1,14 @@
 import atexit
 import functools
 import itertools
+from multiprocessing.context import SpawnProcess
 import os
 import time
 import traceback
 import warnings
 
 from yacs.config import CfgNode
+import torch.multiprocessing as mp
 
 """
 # install package 
@@ -243,7 +245,7 @@ def schedule_tasks(tasks: [Schedulable], sync=False, process_interval=1, minimum
                 # iterate cfgs, find suitable cfg to execute
                 for task in tasks:
                     gpu_num = len(task.get_gpus())
-                    # print(gpu_num, free_num)
+                    #print(gpu_num, free_num)
 
                     # allocate gpu for this task
                     if free_num >= gpu_num:
@@ -252,7 +254,7 @@ def schedule_tasks(tasks: [Schedulable], sync=False, process_interval=1, minimum
 
                         # do
                         task.set_pid(task_ids[task], states)
-                        p = Process(target=task.run)
+                        p = SpawnProcess(target=task.run)
                         p.start()
                         processes.append(p)
                         print('Allocated task {} to gpu : {}'.format(str(task), gpu_str))

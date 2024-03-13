@@ -33,6 +33,6 @@ def train():
 
 if __name__ == '__main__':
     from utils.task import FunctionJob
-    job = FunctionJob([train], gpus=[[1]])
+    job = FunctionJob([train], gpus=[[0]])
     job.run(minimum_memory=2000)
     # train()
